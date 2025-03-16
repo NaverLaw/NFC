@@ -2,14 +2,12 @@
 <html lang="uk">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Create Profile</title>
+    <title>Create Your Profile</title>
     <style>
         body { font-family: Arial, sans-serif; margin: 20px; }
         label { display: block; margin: 10px 0 5px; }
-        input, textarea { width: 100%; padding: 8px; margin-bottom: 10px; }
-        button { padding: 10px 20px; background-color: #4CAF50; color: white; border: none; cursor: pointer; }
-        button:hover { background-color: #45a049; }
+        input, textarea { width: 100%; max-width: 300px; padding: 5px; }
+        button { margin-top: 10px; padding: 5px 10px; }
     </style>
 </head>
 <body>
@@ -17,51 +15,64 @@
     <form id="profileForm" enctype="multipart/form-data">
         <label for="firstName">First Name:</label>
         <input type="text" id="firstName" name="firstName" required>
-
+        
         <label for="lastName">Last Name:</label>
         <input type="text" id="lastName" name="lastName" required>
-
+        
         <label for="email">Email:</label>
-        <input type="email" id="email" name="email" required>
-
-        <label for="company">Company Name:</label>
-        <input type="text" id="company" name="company" required>
-
+        <input type="email" id="email" name="email">
+        
+        <label for="company">Company:</label>
+        <input type="text" id="company" name="company">
+        
         <label for="industry">Industry:</label>
-        <input type="text" id="industry" name="industry" required>
-
-        <label for="photo">Photo (optional):</label>
+        <input type="text" id="industry" name="industry">
+        
+        <label for="photo">Photo:</label>
         <input type="file" id="photo" name="photo" accept="image/*">
-
+        
         <label for="description">Description:</label>
-        <textarea id="description" name="description" rows="4"></textarea>
-
+        <textarea id="description" name="description"></textarea>
+        
         <button type="submit">Save Profile</button>
     </form>
-
     <div id="result"></div>
 
-  <script>
-    document.getElementById('profileForm').addEventListener('submit', async function(e) {
-        e.preventDefault();
-        const formData = new FormData(this);
-        try {
-            const response = await fetch('/api/save-profile', {
-                method: 'POST',
-                body: formData
+    <script>
+        console.log('Script loaded');
+        const form = document.getElementById('profileForm');
+        if (!form) {
+            console.error('Form not found!');
+        } else {
+            console.log('Form found, attaching event listener');
+            form.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                console.log('Form submitted');
+                const formData = new FormData(this);
+                console.log('Form data prepared:', Array.from(formData.entries()));
+                try {
+                    const response = await fetch('/api/save-profile', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    console.log('Response received, status:', response.status);
+                    if (!response.ok) {
+                        throw new Error(`Server responded with status: ${response.status}`);
+                    }
+                    const result = await response.json();
+                    console.log('Parsed response:', result);
+                    if (result.success) {
+                        document.getElementById('result').innerHTML = 
+                            `Profile created! Your page: <a href="${result.url}">${result.url}</a>`;
+                    } else {
+                        document.getElementById('result').innerHTML = 'Error creating profile.';
+                    }
+                } catch (error) {
+                    console.error('Fetch error:', error);
+                    document.getElementById('result').innerHTML = 'Error submitting form.';
+                }
             });
-            const result = await response.json();
-            if (result.success) {
-                document.getElementById('result').innerHTML = 
-                    `Profile created! Your page: <a href="${result.url}">${result.url}</a>`;
-            } else {
-                document.getElementById('result').innerHTML = 'Error creating profile.';
-            }
-        } catch (error) {
-            console.error('Error:', error);
-            document.getElementById('result').innerHTML = 'Error submitting form.';
         }
-    });
-</script>
+    </script>
 </body>
 </html>
