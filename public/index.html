@@ -46,7 +46,7 @@
             e.preventDefault();
             const formData = new FormData(e.target);
 
-            const response = await fetch('/save-profile', {
+            const response = await fetch('/api/save-profile', {
                 method: 'POST',
                 body: formData
             });

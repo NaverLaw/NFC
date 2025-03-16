@@ -2,11 +2,11 @@ const express = require('express');
 const multer = require('multer');
 const app = express();
 
-// Налаштування для завантаження файлів у пам’ять (не на диск)
+// Налаштування для завантаження файлів у пам’ять
 const upload = multer({ storage: multer.memoryStorage() });
 
-// Доступ до статичних файлів у папці public
-app.use(express.static('public'));
+// Дозволяємо JSON для POST-запитів
+app.use(express.json());
 
 // Шаблон для сторінки профілю
 const profileTemplate = (data, photoUrl) => `
@@ -32,11 +32,10 @@ const profileTemplate = (data, photoUrl) => `
 `;
 
 // Обробка форми
-app.post('/save-profile', upload.single('photo'), (req, res) => {
+app.post('/api/save-profile', upload.single('photo'), (req, res) => {
     const { firstName, lastName, email, company, industry, description } = req.body;
     let photoUrl = '';
 
-    // Якщо є фото, конвертуємо його в base64 і додаємо як data URL
     if (req.file) {
         const photoBase64 = req.file.buffer.toString('base64');
         photoUrl = `data:image/${req.file.mimetype.split('/')[1]};base64,${photoBase64}`;
@@ -45,25 +44,22 @@ app.post('/save-profile', upload.single('photo'), (req, res) => {
     const profileId = `${firstName}-${lastName}-${Date.now()}`;
     const profileUrl = `/profiles/${profileId}`;
 
-    // Повертаємо JSON із URL профілю
     res.json({ success: true, url: profileUrl });
 });
 
 // Обробка сторінки профілю
-app.get('/profiles/:id', (req, res) => {
-    // Отримуємо дані з URL-параметрів або сесії, але для простоти повертаємо приклад
+app.get('/api/profiles/:id', (req, res) => {
     const profileId = req.params.id;
-    const [firstName, lastName] = profileId.split('-').slice(0, 2); // Витягуємо ім’я та прізвище
+    const [firstName, lastName] = profileId.split('-').slice(0, 2);
     const profileData = {
         firstName,
         lastName,
-        email: 'example@email.com', // Для прикладу, можна додати збереження
+        email: 'example@email.com', // Тимчасові дані
         company: 'Example Corp',
         industry: 'Tech',
         description: 'This is a test profile'
     };
-    // Тут має бути логіка для фото, але поки фото втрачається
-    res.send(profileTemplate(profileData, '')); // Без фото для простоти
+    res.send(profileTemplate(profileData, '')); // Без фото поки що
 });
 
 module.exports = app;
