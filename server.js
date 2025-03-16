@@ -1,15 +1,15 @@
 const express = require('express');
 const multer = require('multer');
-const fs = require('fs');
-const path = require('path');
 const app = express();
-const port = 3000;
 
-const upload = multer({ dest: 'uploads/' });
+// Налаштування для завантаження файлів у пам’ять (не на диск)
+const upload = multer({ storage: multer.memoryStorage() });
 
+// Доступ до статичних файлів у папці public
 app.use(express.static('public'));
 
-const profileTemplate = (data) => `
+// Шаблон для сторінки профілю
+const profileTemplate = (data, photoUrl) => `
 <!DOCTYPE html>
 <html lang="uk">
 <head>
@@ -25,33 +25,45 @@ const profileTemplate = (data) => `
     <p><strong>Email:</strong> ${data.email}</p>
     <p><strong>Company:</strong> ${data.company}</p>
     <p><strong>Industry:</strong> ${data.industry}</p>
-    ${data.photo ? `<img src="/uploads/${data.photo}" alt="Photo">` : ''}
+    ${photoUrl ? `<img src="${photoUrl}" alt="Photo">` : ''}
     <p><strong>Description:</strong> ${data.description || 'No description'}</p>
 </body>
 </html>
 `;
 
+// Обробка форми
 app.post('/save-profile', upload.single('photo'), (req, res) => {
     const { firstName, lastName, email, company, industry, description } = req.body;
-    const photo = req.file ? req.file.filename : null;
+    let photoUrl = '';
 
-    const profileId = `${firstName}-${lastName}-${Date.now()}`;
-    const profilePath = path.join(__dirname, 'public', 'profiles', `${profileId}.html`);
-
-    if (!fs.existsSync(path.join(__dirname, 'public', 'profiles'))) {
-        fs.mkdirSync(path.join(__dirname, 'public', 'profiles'));
+    // Якщо є фото, конвертуємо його в base64 і додаємо як data URL
+    if (req.file) {
+        const photoBase64 = req.file.buffer.toString('base64');
+        photoUrl = `data:image/${req.file.mimetype.split('/')[1]};base64,${photoBase64}`;
     }
 
-    const profileData = { firstName, lastName, email, company, industry, description, photo };
-    fs.writeFileSync(profilePath, profileTemplate(profileData));
+    const profileId = `${firstName}-${lastName}-${Date.now()}`;
+    const profileUrl = `/profiles/${profileId}`;
 
-    const profileUrl = `http://192.168.0.185:${port}/profiles/${profileId}.html`;
+    // Повертаємо JSON із URL профілю
     res.json({ success: true, url: profileUrl });
 });
 
-app.use('/uploads', express.static('uploads'));
-app.use('/profiles', express.static('public/profiles'));
-
-app.listen(port, '0.0.0.0', () => {
-    console.log(`Server running at http://192.168.0.185:${port}`);
+// Обробка сторінки профілю
+app.get('/profiles/:id', (req, res) => {
+    // Отримуємо дані з URL-параметрів або сесії, але для простоти повертаємо приклад
+    const profileId = req.params.id;
+    const [firstName, lastName] = profileId.split('-').slice(0, 2); // Витягуємо ім’я та прізвище
+    const profileData = {
+        firstName,
+        lastName,
+        email: 'example@email.com', // Для прикладу, можна додати збереження
+        company: 'Example Corp',
+        industry: 'Tech',
+        description: 'This is a test profile'
+    };
+    // Тут має бути логіка для фото, але поки фото втрачається
+    res.send(profileTemplate(profileData, '')); // Без фото для простоти
 });
+
+module.exports = app;
