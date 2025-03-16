@@ -54,6 +54,7 @@ app.post('/save-profile', upload.single('photo'), async (req, res) => {
             const blobResult = await put(`${firstName}-${lastName}-${Date.now()}-${req.file.originalname}`, req.file.buffer, {
                 access: 'public',
                 contentType: req.file.mimetype,
+                token: process.env.BLOB_READ_WRITE_TOKEN, // Використовуємо токен із середовища
             });
             photoUrl = blobResult.url;
             console.log('Photo uploaded:', photoUrl);
