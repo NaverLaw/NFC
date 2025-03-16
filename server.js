@@ -5,8 +5,9 @@ const app = express();
 // Налаштування для завантаження файлів у пам’ять
 const upload = multer({ storage: multer.memoryStorage() });
 
-// Дозволяємо JSON для POST-запитів
+// Дозволяємо JSON і urlencoded для POST-запитів
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // Шаблон для сторінки профілю
 const profileTemplate = (data, photoUrl) => `
@@ -48,7 +49,7 @@ app.post('/api/save-profile', upload.single('photo'), (req, res) => {
 });
 
 // Обробка сторінки профілю
-app.get('/api/profiles/:id', (req, res) => {
+app.get('/profiles/:id', (req, res) => {
     const profileId = req.params.id;
     const [firstName, lastName] = profileId.split('-').slice(0, 2);
     const profileData = {

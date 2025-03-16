@@ -12,7 +12,12 @@
     ],
     "routes": [
       {
-        "src": "/api/(.*)",
+        "src": "/api/save-profile",
+        "methods": ["POST"],
+        "dest": "server.js"
+      },
+      {
+        "src": "/profiles/(.*)",
         "dest": "server.js"
       },
       {
