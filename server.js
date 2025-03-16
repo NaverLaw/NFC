@@ -1,10 +1,7 @@
 const express = require('express');
-const multer = require('multer');
 const app = express();
 
-// Налаштування Multer для обробки FormData без файлів
-const upload = multer();
-
+// Парсинг form-data і urlencoded
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
@@ -33,19 +30,21 @@ const profileTemplate = (data) => `
 `;
 
 // Обробка POST /save-profile
-app.post('/save-profile', upload.none(), (req, res) => {
+app.post('/save-profile', (req, res) => {
     try {
         console.log('Received POST /save-profile');
         console.log('Request body:', req.body);
 
-        const { firstName, lastName, email, company, industry, description } = req.body;
+        const { firstName, lastName, email, company, industry, description } = req.body || {};
         if (!firstName || !lastName) {
+            console.log('Missing required fields');
             return res.status(400).json({ success: false, error: 'First Name and Last Name are required' });
         }
 
         const profileId = `${firstName}-${lastName}-${Date.now()}`;
         const profileUrl = `/profiles/${profileId}`;
 
+        console.log('Sending response:', { success: true, url: profileUrl });
         res.json({ success: true, url: profileUrl });
     } catch (error) {
         console.error('Error in /save-profile:', error);
