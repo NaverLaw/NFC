@@ -1,6 +1,6 @@
 const express = require('express');
 const multer = require('multer');
-const { Blob } = require('@vercel/blob');
+const { put } = require('@vercel/blob');
 const app = express();
 
 // Налаштування Multer
@@ -40,6 +40,7 @@ app.post('/save-profile', upload.single('photo'), async (req, res) => {
     try {
         console.log('Received POST /save-profile');
         console.log('Request body:', req.body);
+        console.log('File:', req.file);
 
         const { firstName, lastName, email, company, industry, description } = req.body || {};
         if (!firstName || !lastName) {
@@ -50,12 +51,11 @@ app.post('/save-profile', upload.single('photo'), async (req, res) => {
         let photoUrl = '';
         if (req.file) {
             console.log('Uploading photo to Blob');
-            const blob = new Blob();
-            const uploadResult = await blob.upload(req.file.originalname, req.file.buffer, {
+            const blobResult = await put(`${firstName}-${lastName}-${Date.now()}-${req.file.originalname}`, req.file.buffer, {
                 access: 'public',
                 contentType: req.file.mimetype,
             });
-            photoUrl = uploadResult.url;
+            photoUrl = blobResult.url;
             console.log('Photo uploaded:', photoUrl);
         }
 
@@ -65,7 +65,8 @@ app.post('/save-profile', upload.single('photo'), async (req, res) => {
         console.log('Sending response:', { success: true, url: profileUrl });
         res.json({ success: true, url: profileUrl });
     } catch (error) {
-        console.error('Error in /save-profile:', error);
+        console.error('Error in /save-profile:', error.message);
+        console.error('Stack trace:', error.stack);
         res.status(500).json({ success: false, error: 'Internal server error' });
     }
 });
@@ -90,7 +91,7 @@ app.get('/profiles/:id', (req, res) => {
 
         res.send(profileTemplate(profileData, decodeURIComponent(photo) || ''));
     } catch (error) {
-        console.error('Error in /profiles/:id:', error);
+        console.error('Error in /profiles/:id:', error.message);
         res.status(500).send('Error generating profile');
     }
 });
