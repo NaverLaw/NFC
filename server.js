@@ -2,7 +2,7 @@ const express = require('express');
 const multer = require('multer');
 const app = express();
 
-// Налаштування Multer для обробки multipart/form-data
+// Налаштування Multer
 const upload = multer();
 
 app.use(express.urlencoded({ extended: true }));
@@ -45,7 +45,7 @@ app.post('/save-profile', upload.none(), (req, res) => {
         }
 
         const profileId = `${firstName}-${lastName}-${Date.now()}`;
-        const profileUrl = `/profiles/${profileId}`;
+        const profileUrl = `/profiles/${profileId}?email=${encodeURIComponent(email || '')}&company=${encodeURIComponent(company || '')}&industry=${encodeURIComponent(industry || '')}&description=${encodeURIComponent(description || '')}`;
 
         console.log('Sending response:', { success: true, url: profileUrl });
         res.json({ success: true, url: profileUrl });
@@ -59,16 +59,18 @@ app.post('/save-profile', upload.none(), (req, res) => {
 app.get('/profiles/:id', (req, res) => {
     try {
         console.log('Received GET /profiles/:id', req.params.id);
+        console.log('Query params:', req.query);
         const profileId = req.params.id;
         const [firstName, lastName] = profileId.split('-').slice(0, 2);
 
+        const { email, company, industry, description } = req.query;
         const profileData = {
             firstName,
             lastName,
-            email: req.query.email || 'N/A',
-            company: req.query.company || 'N/A',
-            industry: req.query.industry || 'N/A',
-            description: req.query.description || 'No description'
+            email: decodeURIComponent(email) || 'N/A',
+            company: decodeURIComponent(company) || 'N/A',
+            industry: decodeURIComponent(industry) || 'N/A',
+            description: decodeURIComponent(description) || 'No description'
         };
 
         res.send(profileTemplate(profileData));
