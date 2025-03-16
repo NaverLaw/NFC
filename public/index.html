@@ -41,24 +41,27 @@
 
     <div id="result"></div>
 
-    <script>
-        document.getElementById('profileForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const formData = new FormData(e.target);
-
+  <script>
+    document.getElementById('profileForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        try {
             const response = await fetch('/api/save-profile', {
                 method: 'POST',
                 body: formData
             });
-
             const result = await response.json();
             if (result.success) {
                 document.getElementById('result').innerHTML = 
-    `Profile created! Your page: <a href="${result.url}">${result.url}</a> <button onclick="navigator.clipboard.writeText('${result.url}')">Copy URL</button>`;
+                    `Profile created! Your page: <a href="${result.url}">${result.url}</a>`;
             } else {
-                alert('Error creating profile');
+                document.getElementById('result').innerHTML = 'Error creating profile.';
             }
-        });
-    </script>
+        } catch (error) {
+            console.error('Error:', error);
+            document.getElementById('result').innerHTML = 'Error submitting form.';
+        }
+    });
+</script>
 </body>
 </html>

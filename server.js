@@ -55,12 +55,12 @@ app.get('/profiles/:id', (req, res) => {
     const profileData = {
         firstName,
         lastName,
-        email: 'example@email.com', // Тимчасові дані
+        email: 'example@email.com',
         company: 'Example Corp',
         industry: 'Tech',
         description: 'This is a test profile'
     };
-    res.send(profileTemplate(profileData, '')); // Без фото поки що
+    res.send(profileTemplate(profileData, ''));
 });
 
 module.exports = app;
