@@ -24,5 +24,10 @@
             "src": "/(.*)",
             "dest": "public/$1"
         }
-    ]
+    ],
+    "functions": {
+        "server.js": {
+            "includeFiles": ["node_modules/@vercel/blob"]
+        }
+    }
 }

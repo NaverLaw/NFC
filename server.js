@@ -1,9 +1,10 @@
 const express = require('express');
 const multer = require('multer');
+const { Blob } = require('@vercel/blob');
 const app = express();
 
 // Налаштування Multer
-const upload = multer();
+const upload = multer({ storage: multer.memoryStorage() });
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
@@ -12,7 +13,7 @@ app.use(express.json());
 app.use(express.static('public'));
 
 // Шаблон для профілю
-const profileTemplate = (data) => `
+const profileTemplate = (data, photoUrl) => `
 <!DOCTYPE html>
 <html lang="uk">
 <head>
@@ -20,6 +21,7 @@ const profileTemplate = (data) => `
     <title>Profile of ${data.firstName} ${data.lastName}</title>
     <style>
         body { font-family: Arial, sans-serif; margin: 20px; }
+        img { max-width: 200px; }
     </style>
 </head>
 <body>
@@ -27,13 +29,14 @@ const profileTemplate = (data) => `
     <p><strong>Email:</strong> ${data.email || 'N/A'}</p>
     <p><strong>Company:</strong> ${data.company || 'N/A'}</p>
     <p><strong>Industry:</strong> ${data.industry || 'N/A'}</p>
+    ${photoUrl ? `<p><img src="${photoUrl}" alt="Profile Photo"></p>` : ''}
     <p><strong>Description:</strong> ${data.description || 'No description'}</p>
 </body>
 </html>
 `;
 
 // Обробка POST /save-profile
-app.post('/save-profile', upload.none(), (req, res) => {
+app.post('/save-profile', upload.single('photo'), async (req, res) => {
     try {
         console.log('Received POST /save-profile');
         console.log('Request body:', req.body);
@@ -44,8 +47,20 @@ app.post('/save-profile', upload.none(), (req, res) => {
             return res.status(400).json({ success: false, error: 'First Name and Last Name are required' });
         }
 
+        let photoUrl = '';
+        if (req.file) {
+            console.log('Uploading photo to Blob');
+            const blob = new Blob();
+            const uploadResult = await blob.upload(req.file.originalname, req.file.buffer, {
+                access: 'public',
+                contentType: req.file.mimetype,
+            });
+            photoUrl = uploadResult.url;
+            console.log('Photo uploaded:', photoUrl);
+        }
+
         const profileId = `${firstName}-${lastName}-${Date.now()}`;
-        const profileUrl = `/profiles/${profileId}?email=${encodeURIComponent(email || '')}&company=${encodeURIComponent(company || '')}&industry=${encodeURIComponent(industry || '')}&description=${encodeURIComponent(description || '')}`;
+        const profileUrl = `/profiles/${profileId}?email=${encodeURIComponent(email || '')}&company=${encodeURIComponent(company || '')}&industry=${encodeURIComponent(industry || '')}&description=${encodeURIComponent(description || '')}&photo=${encodeURIComponent(photoUrl)}`;
 
         console.log('Sending response:', { success: true, url: profileUrl });
         res.json({ success: true, url: profileUrl });
@@ -63,7 +78,7 @@ app.get('/profiles/:id', (req, res) => {
         const profileId = req.params.id;
         const [firstName, lastName] = profileId.split('-').slice(0, 2);
 
-        const { email, company, industry, description } = req.query;
+        const { email, company, industry, description, photo } = req.query;
         const profileData = {
             firstName,
             lastName,
@@ -73,7 +88,7 @@ app.get('/profiles/:id', (req, res) => {
             description: decodeURIComponent(description) || 'No description'
         };
 
-        res.send(profileTemplate(profileData));
+        res.send(profileTemplate(profileData, decodeURIComponent(photo) || ''));
     } catch (error) {
         console.error('Error in /profiles/:id:', error);
         res.status(500).send('Error generating profile');
