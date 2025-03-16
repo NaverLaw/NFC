@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Profile</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        label { display: block; margin: 10px 0 5px; }
+        input, textarea { width: 100%; padding: 8px; margin-bottom: 10px; }
+        button { padding: 10px 20px; background-color: #4CAF50; color: white; border: none; cursor: pointer; }
+        button:hover { background-color: #45a049; }
+    </style>
+</head>
+<body>
+    <h1>Create Your Profile</h1>
+    <form id="profileForm" enctype="multipart/form-data">
+        <label for="firstName">First Name:</label>
+        <input type="text" id="firstName" name="firstName" required>
+
+        <label for="lastName">Last Name:</label>
+        <input type="text" id="lastName" name="lastName" required>
+
+        <label for="email">Email:</label>
+        <input type="email" id="email" name="email" required>
+
+        <label for="company">Company Name:</label>
+        <input type="text" id="company" name="company" required>
+
+        <label for="industry">Industry:</label>
+        <input type="text" id="industry" name="industry" required>
+
+        <label for="photo">Photo (optional):</label>
+        <input type="file" id="photo" name="photo" accept="image/*">
+
+        <label for="description">Description:</label>
+        <textarea id="description" name="description" rows="4"></textarea>
+
+        <button type="submit">Save Profile</button>
+    </form>
+
+    <div id="result"></div>
+
+    <script>
+        document.getElementById('profileForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+
+            const response = await fetch('/save-profile', {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.json();
+            if (result.success) {
+                document.getElementById('result').innerHTML = 
+    `Profile created! Your page: <a href="${result.url}">${result.url}</a> <button onclick="navigator.clipboard.writeText('${result.url}')">Copy URL</button>`;
+            } else {
+                alert('Error creating profile');
+            }
+        });
+    </script>
+</body>
+</html>
