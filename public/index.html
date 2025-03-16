@@ -45,7 +45,7 @@
                     method: 'POST',
                     body: formData
                 });
-                if (!response.ok) throw new Error('Server error');
+                if (!response.ok) throw new Error('Server responded with status: ' + response.status);
                 const result = await response.json();
                 if (result.success) {
                     document.getElementById('result').innerHTML = 

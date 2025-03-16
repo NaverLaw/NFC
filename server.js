@@ -1,11 +1,14 @@
 const express = require('express');
+const multer = require('multer');
 const app = express();
 
-// Парсинг даних із форми
+// Налаштування Multer для обробки FormData без файлів
+const upload = multer();
+
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-// Статичні файли з папки public
+// Статичні файли
 app.use(express.static('public'));
 
 // Шаблон для профілю
@@ -30,34 +33,47 @@ const profileTemplate = (data) => `
 `;
 
 // Обробка POST /save-profile
-app.post('/save-profile', (req, res) => {
-    const { firstName, lastName, email, company, industry, description } = req.body;
-    if (!firstName || !lastName) {
-        return res.status(400).json({ success: false, error: 'First Name and Last Name are required' });
+app.post('/save-profile', upload.none(), (req, res) => {
+    try {
+        console.log('Received POST /save-profile');
+        console.log('Request body:', req.body);
+
+        const { firstName, lastName, email, company, industry, description } = req.body;
+        if (!firstName || !lastName) {
+            return res.status(400).json({ success: false, error: 'First Name and Last Name are required' });
+        }
+
+        const profileId = `${firstName}-${lastName}-${Date.now()}`;
+        const profileUrl = `/profiles/${profileId}`;
+
+        res.json({ success: true, url: profileUrl });
+    } catch (error) {
+        console.error('Error in /save-profile:', error);
+        res.status(500).json({ success: false, error: 'Internal server error' });
     }
-
-    const profileId = `${firstName}-${lastName}-${Date.now()}`;
-    const profileUrl = `/profiles/${profileId}`;
-
-    res.json({ success: true, url: profileUrl });
 });
 
 // Обробка GET /profiles/:id
 app.get('/profiles/:id', (req, res) => {
-    const profileId = req.params.id;
-    const [firstName, lastName] = profileId.split('-').slice(0, 2);
+    try {
+        console.log('Received GET /profiles/:id', req.params.id);
+        const profileId = req.params.id;
+        const [firstName, lastName] = profileId.split('-').slice(0, 2);
 
-    // Дані з запиту (поки фіктивні, без збереження)
-    const profileData = {
-        firstName,
-        lastName,
-        email: req.query.email || 'N/A',
-        company: req.query.company || 'N/A',
-        industry: req.query.industry || 'N/A',
-        description: req.query.description || 'No description'
-    };
+        const profileData = {
+            firstName,
+            lastName,
+            email: req.query.email || 'N/A',
+            company: req.query.company || 'N/A',
+            industry: req.query.industry || 'N/A',
+            description: req.query.description || 'No description'
+        };
 
-    res.send(profileTemplate(profileData));
+        res.send(profileTemplate(profileData));
+    } catch (error) {
+        console.error('Error in /profiles/:id:', error);
+        res.status(500).send('Error generating profile');
+    }
 });
 
 module.exports = app;
