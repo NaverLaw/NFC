@@ -34,33 +34,50 @@ const profileTemplate = (data, photoUrl) => `
 
 // Обробка форми
 app.post('/api/save-profile', upload.single('photo'), (req, res) => {
-    const { firstName, lastName, email, company, industry, description } = req.body;
-    let photoUrl = '';
+    try {
+        console.log('Received POST to /api/save-profile');
+        console.log('Body:', req.body);
+        console.log('File:', req.file);
 
-    if (req.file) {
-        const photoBase64 = req.file.buffer.toString('base64');
-        photoUrl = `data:image/${req.file.mimetype.split('/')[1]};base64,${photoBase64}`;
+        const { firstName, lastName, email, company, industry, description } = req.body || {};
+        if (!firstName || !lastName) {
+            return res.status(400).json({ success: false, error: 'First Name and Last Name are required' });
+        }
+
+        let photoUrl = '';
+        if (req.file) {
+            const photoBase64 = req.file.buffer.toString('base64');
+            photoUrl = `data:image/${req.file.mimetype.split('/')[1]};base64,${photoBase64}`;
+        }
+
+        const profileId = `${firstName}-${lastName}-${Date.now()}`;
+        const profileUrl = `/profiles/${profileId}`;
+
+        res.json({ success: true, url: profileUrl });
+    } catch (error) {
+        console.error('Error in /api/save-profile:', error);
+        res.status(500).json({ success: false, error: 'Server error' });
     }
-
-    const profileId = `${firstName}-${lastName}-${Date.now()}`;
-    const profileUrl = `/profiles/${profileId}`;
-
-    res.json({ success: true, url: profileUrl });
 });
 
 // Обробка сторінки профілю
 app.get('/profiles/:id', (req, res) => {
-    const profileId = req.params.id;
-    const [firstName, lastName] = profileId.split('-').slice(0, 2);
-    const profileData = {
-        firstName,
-        lastName,
-        email: 'example@email.com',
-        company: 'Example Corp',
-        industry: 'Tech',
-        description: 'This is a test profile'
-    };
-    res.send(profileTemplate(profileData, ''));
+    try {
+        const profileId = req.params.id;
+        const [firstName, lastName] = profileId.split('-').slice(0, 2);
+        const profileData = {
+            firstName,
+            lastName,
+            email: 'example@email.com',
+            company: 'Example Corp',
+            industry: 'Tech',
+            description: 'This is a test profile'
+        };
+        res.send(profileTemplate(profileData, ''));
+    } catch (error) {
+        console.error('Error in /profiles/:id:', error);
+        res.status(500).send('Error generating profile');
+    }
 });
 
 module.exports = app;
