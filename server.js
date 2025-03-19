@@ -1,10 +1,18 @@
 const express = require('express');
 const multer = require('multer');
-const { put } = require('@vercel/blob');
 const app = express();
 
 // Налаштування Multer
-const upload = multer({ storage: multer.memoryStorage() });
+const upload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 5 * 1024 * 1024 }, // Обмеження: 5MB
+    fileFilter: (req, file, cb) => {
+        if (!file.mimetype.startsWith('image/')) {
+            return cb(new Error('Only image files are allowed'), false);
+        }
+        cb(null, true);
+    },
+});
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
@@ -51,17 +59,13 @@ app.post('/save-profile', upload.single('photo'), async (req, res) => {
         let photoUrl = '';
         if (req.file) {
             try {
-                console.log('Uploading photo to Blob');
-                const blobResult = await put(`${firstName}-${lastName}-${Date.now()}-${req.file.originalname}`, req.file.buffer, {
-                    access: 'public',
-                    contentType: req.file.mimetype,
-                    token: process.env.BLOB_READ_WRITE_TOKEN, // Використовуємо токен із середовища
-                });
-                photoUrl = blobResult.url;
-                console.log('Photo uploaded:', photoUrl);
+                console.log('Processing uploaded photo');
+                // Зберігаємо файл локально або в хмарі (залежить від вашої реалізації)
+                photoUrl = `/uploads/${req.file.originalname}`; // Замініть на реальне збереження
+                console.log('Photo processed:', photoUrl);
             } catch (uploadError) {
-                console.error('Error uploading photo:', uploadError.message);
-                return res.status(500).json({ success: false, error: 'Error uploading photo' });
+                console.error('Error processing photo:', uploadError.message);
+                return res.status(500).json({ success: false, error: 'Error processing photo' });
             }
         }
 
