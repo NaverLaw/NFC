@@ -2,12 +2,15 @@
 <html lang="uk">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Create Your Profile</title>
     <style>
         body { font-family: Arial, sans-serif; margin: 20px; }
         label { display: block; margin: 10px 0 5px; }
         input, textarea { width: 100%; max-width: 300px; padding: 5px; }
-        button { margin-top: 10px; padding: 5px 10px; }
+        button { margin-top: 10px; padding: 5px 10px; background-color: #007BFF; color: white; border: none; cursor: pointer; }
+        button:hover { background-color: #0056b3; }
+        #result { margin-top: 20px; }
     </style>
 </head>
 <body>
@@ -52,7 +55,7 @@
                 const result = await response.json();
                 if (result.success) {
                     document.getElementById('result').innerHTML = 
-                        `Profile created! Your page: <a href="${result.url}">${result.url}</a>`;
+                        `Profile created! Your page: <a href="${result.url}" target="_blank">${result.url}</a>`;
                 } else {
                     document.getElementById('result').innerHTML = 'Error: ' + result.error;
                 }
