@@ -1,10 +1,19 @@
 const express = require('express');
 const multer = require('multer');
+const path = require('path');
 const app = express();
 
-// Налаштування Multer
+// Налаштування Multer для збереження файлів на диску
 const upload = multer({
-    storage: multer.memoryStorage(),
+    storage: multer.diskStorage({
+        destination: (req, file, cb) => {
+            cb(null, path.join(__dirname, 'uploads')); // Папка для збереження файлів
+        },
+        filename: (req, file, cb) => {
+            const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+            cb(null, uniqueSuffix + '-' + file.originalname); // Унікальне ім'я файлу
+        },
+    }),
     limits: { fileSize: 5 * 1024 * 1024 }, // Обмеження: 5MB
     fileFilter: (req, file, cb) => {
         if (!file.mimetype.startsWith('image/')) {
@@ -16,6 +25,9 @@ const upload = multer({
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
+
+// Додаємо статичний маршрут для обслуговування завантажених файлів
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Статичні файли
 app.use(express.static('public'));
@@ -58,15 +70,8 @@ app.post('/save-profile', upload.single('photo'), async (req, res) => {
 
         let photoUrl = '';
         if (req.file) {
-            try {
-                console.log('Processing uploaded photo');
-                // Зберігаємо файл локально або в хмарі (залежить від вашої реалізації)
-                photoUrl = `/uploads/${req.file.originalname}`; // Замініть на реальне збереження
-                console.log('Photo processed:', photoUrl);
-            } catch (uploadError) {
-                console.error('Error processing photo:', uploadError.message);
-                return res.status(500).json({ success: false, error: 'Error processing photo' });
-            }
+            photoUrl = `/uploads/${req.file.filename}`; // Використовуємо збережений файл
+            console.log('Photo processed:', photoUrl);
         }
 
         const profileId = `${firstName}-${lastName}-${Date.now()}`;
