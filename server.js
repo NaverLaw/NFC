@@ -1,27 +1,11 @@
 const express = require('express');
 const multer = require('multer');
 const path = require('path');
-const fs = require('fs');
 const app = express();
 
-// Перевірка та створення папки для завантажень
-const uploadPath = path.join(__dirname, 'uploads');
-if (!fs.existsSync(uploadPath)) {
-    fs.mkdirSync(uploadPath);
-    console.log('Created uploads directory:', uploadPath);
-}
-
-// Налаштування Multer для збереження файлів на диску
+// Налаштування Multer для обробки файлів (без збереження на диск)
 const upload = multer({
-    storage: multer.diskStorage({
-        destination: (req, file, cb) => {
-            cb(null, uploadPath); // Папка для збереження файлів
-        },
-        filename: (req, file, cb) => {
-            const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-            cb(null, uniqueSuffix + '-' + file.originalname); // Унікальне ім'я файлу
-        },
-    }),
+    storage: multer.memoryStorage(), // Зберігаємо файли в пам'яті
     limits: { fileSize: 5 * 1024 * 1024 }, // Обмеження: 5MB
     fileFilter: (req, file, cb) => {
         if (!file.mimetype.startsWith('image/')) {
@@ -34,14 +18,11 @@ const upload = multer({
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-// Додаємо статичний маршрут для обслуговування завантажених файлів
-app.use('/uploads', express.static(uploadPath));
-
 // Статичні файли
 app.use(express.static('public'));
 
 // Шаблон для профілю
-const profileTemplate = (data, photoUrl) => `
+const profileTemplate = (data, photoBase64) => `
 <!DOCTYPE html>
 <html lang="uk">
 <head>
@@ -57,7 +38,7 @@ const profileTemplate = (data, photoUrl) => `
     <p><strong>Email:</strong> ${data.email || 'N/A'}</p>
     <p><strong>Company:</strong> ${data.company || 'N/A'}</p>
     <p><strong>Industry:</strong> ${data.industry || 'N/A'}</p>
-    ${photoUrl ? `<p><img src="${photoUrl}" alt="Profile Photo"></p>` : ''}
+    ${photoBase64 ? `<p><img src="data:image/jpeg;base64,${photoBase64}" alt="Profile Photo"></p>` : ''}
     <p><strong>Description:</strong> ${data.description || 'No description'}</p>
 </body>
 </html>
@@ -70,11 +51,20 @@ app.post('/save-profile', upload.single('photo'), async (req, res) => {
         console.log('Request body:', req.body);
         console.log('Uploaded file:', req.file); // Логування файлу
 
-        if (!req.file) {
-            return res.status(400).json({ success: false, error: 'No file uploaded' });
+        const { firstName, lastName, email, company, industry, description } = req.body || {};
+        if (!firstName || !lastName) {
+            return res.status(400).json({ success: false, error: 'First Name and Last Name are required' });
         }
 
-        // Інший код...
+        let photoBase64 = '';
+        if (req.file) {
+            photoBase64 = req.file.buffer.toString('base64'); // Конвертуємо файл у Base64
+        }
+
+        const profileId = `${firstName}-${lastName}-${Date.now()}`;
+        const profileUrl = `/profiles/${profileId}?email=${encodeURIComponent(email || '')}&company=${encodeURIComponent(company || '')}&industry=${encodeURIComponent(industry || '')}&description=${encodeURIComponent(description || '')}&photo=${encodeURIComponent(photoBase64)}`;
+
+        res.json({ success: true, url: profileUrl });
     } catch (error) {
         console.error('Error in /save-profile:', error.message);
         res.status(500).json({ success: false, error: 'Internal server error' });
@@ -97,9 +87,10 @@ app.get('/profiles/:id', (req, res) => {
             description: description ? decodeURIComponent(description) : 'No description',
         };
 
-        const photoUrl = photo ? decodeURIComponent(photo) : '';
-        res.send(profileTemplate(profileData, photoUrl));
+        const photoBase64 = photo ? decodeURIComponent(photo) : '';
+        res.send(profileTemplate(profileData, photoBase64));
     } catch (error) {
+        console.error('Error in /profiles/:id:', error.message);
         res.status(500).send('Error generating profile');
     }
 });
