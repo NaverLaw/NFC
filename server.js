@@ -1,11 +1,11 @@
 const express = require('express');
 const multer = require('multer');
-const path = require('path');
+const { v4: uuidv4 } = require('uuid'); // Для генерації унікальних ідентифікаторів
 const app = express();
 
 // Налаштування Multer для обробки файлів (без збереження на диск)
 const upload = multer({
-    storage: multer.memoryStorage(), // Зберігаємо файли в пам'яті
+    storage: multer.memoryStorage(),
     limits: { fileSize: 5 * 1024 * 1024 }, // Обмеження: 5MB
     fileFilter: (req, file, cb) => {
         if (!file.mimetype.startsWith('image/')) {
@@ -17,9 +17,10 @@ const upload = multer({
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
-
-// Статичні файли
 app.use(express.static('public'));
+
+// Зберігання профілів у пам'яті
+const profiles = {};
 
 // Шаблон для профілю
 const profileTemplate = (data, photoBase64) => `
@@ -45,12 +46,8 @@ const profileTemplate = (data, photoBase64) => `
 `;
 
 // Обробка POST /save-profile
-app.post('/save-profile', upload.single('photo'), async (req, res) => {
+app.post('/save-profile', upload.single('photo'), (req, res) => {
     try {
-        console.log('Received POST /save-profile');
-        console.log('Request body:', req.body);
-        console.log('Uploaded file:', req.file); // Логування файлу
-
         const { firstName, lastName, email, company, industry, description } = req.body || {};
         if (!firstName || !lastName) {
             return res.status(400).json({ success: false, error: 'First Name and Last Name are required' });
@@ -61,10 +58,10 @@ app.post('/save-profile', upload.single('photo'), async (req, res) => {
             photoBase64 = req.file.buffer.toString('base64'); // Конвертуємо файл у Base64
         }
 
-        const profileId = `${firstName}-${lastName}-${Date.now()}`;
-        const profileUrl = `/profiles/${profileId}?email=${encodeURIComponent(email || '')}&company=${encodeURIComponent(company || '')}&industry=${encodeURIComponent(industry || '')}&description=${encodeURIComponent(description || '')}&photo=${encodeURIComponent(photoBase64)}`;
+        const profileId = uuidv4(); // Генеруємо унікальний ідентифікатор
+        profiles[profileId] = { firstName, lastName, email, company, industry, description, photoBase64 };
 
-        res.json({ success: true, url: profileUrl });
+        res.json({ success: true, url: `/profiles/${profileId}` });
     } catch (error) {
         console.error('Error in /save-profile:', error.message);
         res.status(500).json({ success: false, error: 'Internal server error' });
@@ -75,20 +72,13 @@ app.post('/save-profile', upload.single('photo'), async (req, res) => {
 app.get('/profiles/:id', (req, res) => {
     try {
         const profileId = req.params.id;
-        const [firstName, lastName] = profileId.split('-').slice(0, 2);
+        const profileData = profiles[profileId];
 
-        const { email, company, industry, description, photo } = req.query;
-        const profileData = {
-            firstName,
-            lastName,
-            email: email ? decodeURIComponent(email) : 'N/A',
-            company: company ? decodeURIComponent(company) : 'N/A',
-            industry: industry ? decodeURIComponent(industry) : 'N/A',
-            description: description ? decodeURIComponent(description) : 'No description',
-        };
+        if (!profileData) {
+            return res.status(404).send('Profile not found');
+        }
 
-        const photoBase64 = photo ? decodeURIComponent(photo) : '';
-        res.send(profileTemplate(profileData, photoBase64));
+        res.send(profileTemplate(profileData, profileData.photoBase64));
     } catch (error) {
         console.error('Error in /profiles/:id:', error.message);
         res.status(500).send('Error generating profile');
