@@ -74,20 +74,7 @@ app.post('/save-profile', upload.single('photo'), async (req, res) => {
             return res.status(400).json({ success: false, error: 'No file uploaded' });
         }
 
-        const { firstName, lastName, email, company, industry, description } = req.body || {};
-        if (!firstName || !lastName) {
-            return res.status(400).json({ success: false, error: 'First Name and Last Name are required' });
-        }
-
-        let photoUrl = '';
-        if (req.file) {
-            photoUrl = `/uploads/${req.file.filename}`;
-        }
-
-        const profileId = `${firstName}-${lastName}-${Date.now()}`;
-        const profileUrl = `/profiles/${profileId}?email=${encodeURIComponent(email || '')}&company=${encodeURIComponent(company || '')}&industry=${encodeURIComponent(industry || '')}&description=${encodeURIComponent(description || '')}&photo=${encodeURIComponent(photoUrl)}`;
-
-        res.json({ success: true, url: profileUrl });
+        // Інший код...
     } catch (error) {
         console.error('Error in /save-profile:', error.message);
         res.status(500).json({ success: false, error: 'Internal server error' });

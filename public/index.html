@@ -16,27 +16,8 @@
 <body>
     <h1>Create Your Profile</h1>
     <form id="profileForm" enctype="multipart/form-data" method="POST" action="/save-profile">
-        <label for="firstName">First Name:</label>
-        <input type="text" id="firstName" name="firstName" required>
-        
-        <label for="lastName">Last Name:</label>
-        <input type="text" id="lastName" name="lastName" required>
-        
-        <label for="email">Email:</label>
-        <input type="email" id="email" name="email">
-        
-        <label for="company">Company:</label>
-        <input type="text" id="company" name="company">
-        
-        <label for="industry">Industry:</label>
-        <input type="text" id="industry" name="industry">
-        
         <label for="photo">Photo:</label>
         <input type="file" id="photo" name="photo" accept="image/*" required>
-        
-        <label for="description">Description:</label>
-        <textarea id="description" name="description"></textarea>
-        
         <button type="submit">Save Profile</button>
     </form>
     <div id="result"></div>
