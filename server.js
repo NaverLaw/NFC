@@ -66,6 +66,14 @@ const profileTemplate = (data, photoUrl) => `
 // Обробка POST /save-profile
 app.post('/save-profile', upload.single('photo'), async (req, res) => {
     try {
+        console.log('Received POST /save-profile');
+        console.log('Request body:', req.body);
+        console.log('Uploaded file:', req.file); // Логування файлу
+
+        if (!req.file) {
+            return res.status(400).json({ success: false, error: 'No file uploaded' });
+        }
+
         const { firstName, lastName, email, company, industry, description } = req.body || {};
         if (!firstName || !lastName) {
             return res.status(400).json({ success: false, error: 'First Name and Last Name are required' });
@@ -81,6 +89,7 @@ app.post('/save-profile', upload.single('photo'), async (req, res) => {
 
         res.json({ success: true, url: profileUrl });
     } catch (error) {
+        console.error('Error in /save-profile:', error.message);
         res.status(500).json({ success: false, error: 'Internal server error' });
     }
 });
