@@ -1,7 +1,6 @@
 const express = require('express');
 const multer = require('multer');
 const { v4: uuidv4 } = require('uuid'); // Для генерації унікальних ідентифікаторів
-const path = require('path');
 const app = express();
 
 // Налаштування Multer для обробки файлів (без збереження на диск)
@@ -19,9 +18,6 @@ const upload = multer({
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(express.static('public'));
-
-// Serve static files from the frontend build
-app.use(express.static(path.join(__dirname, 'dist')));
 
 // Зберігання профілів у пам'яті
 const profiles = {};
@@ -87,11 +83,6 @@ app.get('/profiles/:id', (req, res) => {
         console.error('Error in /profiles/:id:', error.message);
         res.status(500).send('Error generating profile');
     }
-});
-
-// Handle all other routes by serving the frontend's index.html
-app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
 
 // Слухання порту
